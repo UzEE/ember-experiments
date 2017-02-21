@@ -1,0 +1,27 @@
+<h3>All Users</h3>
+
+<table class="table">
+  <caption>List of all users</caption>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Type</th>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Created At</th>
+      <th>Last Modified At</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each model as |user|}}
+    <tr>
+      <th class="row">{{user.id}}</th>
+      <td>user</td>
+      <td>{{#link-to "users.detail" user}}{{user.username}}{{/link-to}}</td>
+      <td>{{user.email}}</td>
+      <td>{{user.createdAt}}</td>
+      <td>{{user.lastModifiedAt}}</td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>
