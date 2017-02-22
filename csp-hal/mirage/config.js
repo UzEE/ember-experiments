@@ -25,13 +25,18 @@ export default function() {
   */
 
   this.get('users', (schema, req) => {
-    return schema.users.all();
+
+    let page = req.queryParams.page || 0;
+    let size = req.queryParams.size || 10;
+    let users = schema.users.all();
+
+    let sliced = users.slice(page * size, (page * size) + size);
+
+    sliced.meta = { page, size, count: users.length, pageCount: Math.ceil(users.length / size) };
+    return sliced;
   });
 
   this.get('users/:id', (schema, req) => {
-
-    const user = schema.users.find(req.params.id);
-
-    return user;
+    return schema.users.find(req.params.id);
   });
 }
