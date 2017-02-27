@@ -46,7 +46,7 @@ export default Serializer.extend({
     const buildIdentity = (data) => {
 
       data['_identity'] = {
-        type: obj.modelName,
+        cls: obj.modelName,
         id: data.id
       };
 
@@ -94,7 +94,7 @@ export default Serializer.extend({
 
     if (Array.isArray(json)) {
 
-      json.forEach((item) => {
+      json.forEach((item, index) => {
 
         buildIdentity(item);
 
@@ -102,7 +102,7 @@ export default Serializer.extend({
           self: buildHref(obj.modelName, item._identity.id)
         };
 
-        buildRelations(item);
+        buildRelations(item, obj.models[index]);
       });
 
       output['_embedded'] = {
@@ -139,7 +139,7 @@ export default Serializer.extend({
       output = json;
 
       output['_identity'] = {
-        type: obj.modelName,
+        cls: obj.modelName,
         id: obj.attrs.id
       };
 

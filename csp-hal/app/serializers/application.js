@@ -54,6 +54,10 @@ export default DS.JSONAPISerializer.extend({
     return COLLECTION_PAYLOAD_REQUEST_TYPES.indexOf(requestType) === -1;
   },
 
+  isFullResource(payload) {
+    return payload.hasOwnProperty('_identity');
+  },
+
   extractAttributes(primaryModelClass, payload) {
 
     let payloadKey;
@@ -83,10 +87,18 @@ export default DS.JSONAPISerializer.extend({
     let id;
 
     if (payload.hasOwnProperty('_identity')) {
-      id = payload._identity.id; 
+      id = payload._identity.id;
     }
 
     return id === null || id === undefined || id === '' ? null : id + '';
+  },
+
+  extractRelationshipId(primaryModelClass, payload) {
+
+    var primaryKey = this.get('primaryKey');
+    var id = payload[primaryKey];
+
+    return coerceId(id);
   },
 
   extractLink(link) {
@@ -165,13 +177,16 @@ export default DS.JSONAPISerializer.extend({
     if (Ember.typeOf(payload) === 'object') {
 
       relationship = {
-        id: coerceId(this.extractId({}, payload))
+        id: coerceId(this.extractRelationshipId({}, payload))
       };
 
       if (relationshipModelName) {
 
         relationship.type = this.modelNameFromPayloadKey(relationshipModelName);
-        included.push(this.normalize(relationshipModelClass, payload, included));
+        
+        if (this.isFullResource(payload)) {
+          included.push(this.normalize(relationshipModelClass, payload, included));
+        }
       }
 
     } else {
@@ -194,26 +209,46 @@ export default DS.JSONAPISerializer.extend({
     let keyForLink = this.keyForLink;
     let extractLink = this.extractLink;
     let links = payload._links;
+    let relations = payload._relations;
 
-    if (embedded || links) {
+    if (relations) {
 
       primaryModelClass.eachRelationship((key, relationshipMeta) => {
-        
+
         let relationship;
         let relationshipKey = keyForRelationship(key, relationshipMeta);
         let linkKey = keyForLink(key, relationshipMeta);
 
-        if (embedded && embedded.hasOwnProperty(relationshipKey)) {
-          
+        if (relations.hasOwnProperty(relationshipKey)) {
+
           let data;
           let relationModelClass = this.store.modelFor(relationshipMeta.type);
 
           if (relationshipMeta.kind === 'belongsTo') {
-            
-            data = this.extractRelationship(relationModelClass, embedded[relationshipKey], included);
-          
+
+            data = this.extractRelationship(relationModelClass, relations[relationshipKey], included);
+
           } else if (relationshipMeta.kind === 'hasMany') {
-            
+
+            data = relations[relationshipKey].map(item => {
+              return this.extractRelationship(relationModelClass, item, included);
+            });
+          }
+
+          relationship = { data };
+        }
+
+        if (embedded && embedded.hasOwnProperty(relationshipKey)) {
+
+          let data;
+          let relationModelClass = this.store.modelFor(relationshipMeta.type);
+
+          if (relationshipMeta.kind === 'belongsTo') {
+
+            data = this.extractRelationship(relationModelClass, embedded[relationshipKey], included);
+
+          } else if (relationshipMeta.kind === 'hasMany') {
+
             data = embedded[relationshipKey].map(item => {
               return this.extractRelationship(relationModelClass, item, included);
             });
