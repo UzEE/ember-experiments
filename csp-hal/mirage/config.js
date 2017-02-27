@@ -26,8 +26,8 @@ export default function() {
 
   this.get('users', (schema, req) => {
 
-    let page = req.queryParams.page || 0;
-    let size = req.queryParams.size || 10;
+    let page = parseInt(req.queryParams.page) || 0;
+    let size = parseInt(req.queryParams.size) || 10;
     let users = schema.users.all();
 
     let sliced = users.slice(page * size, (page * size) + size);
@@ -37,6 +37,11 @@ export default function() {
   });
 
   this.get('users/:id', (schema, req) => {
-    return schema.users.find(req.params.id);
+
+    let user = schema.users.find(req.params.id);
+
+    return user;
   });
+
+  this.get('organizations/:id');
 }

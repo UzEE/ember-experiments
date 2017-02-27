@@ -2,7 +2,7 @@ import DS from 'ember-data';
 import Ember from 'ember';
 
 let halReservedKeys = ['_embedded', '_links', '_identity', '_relations', '_page'];
-let reservedKeys = halReservedKeys.concat(['meta'])
+let reservedKeys = halReservedKeys.concat(['meta']);
 
 const COLLECTION_PAYLOAD_REQUEST_TYPES = [
   'findHasMany',
@@ -38,6 +38,10 @@ function halToJSONAPILink(link) {
   }
 
   return converted;
+}
+
+function coerceId(id) {
+  return id == null || id === '' ? null : id + '';
 }
 
 export default DS.JSONAPISerializer.extend({
@@ -85,6 +89,10 @@ export default DS.JSONAPISerializer.extend({
     return id === null || id === undefined || id === '' ? null : id + '';
   },
 
+  extractLink(link) {
+    return link.href;
+  },
+
   extractLinks(primaryModelClass, payload) {
 
     let links;
@@ -121,6 +129,24 @@ export default DS.JSONAPISerializer.extend({
 
       if (payload._links) {
         meta.links = this.extractLinks(primaryModelClass, payload);
+      }
+
+      if (payload._page) {
+        meta.pagination = payload._page;
+
+        if (meta.pagination.totalPages > 1) {
+
+          meta.pagination.firstPage = 1;
+          meta.pagination.lastPage = parseInt(meta.pagination.totalPages);
+
+          if (meta.pagination.number > 0) {
+            meta.pagination.prevPage = parseInt(meta.pagination.number);
+          }
+
+          if (meta.pagination.number < meta.pagination.totalPages - 1) {
+            meta.pagination.nextPage = parseInt(meta.pagination.number) + 2;
+          }
+        }
       }
     }
 
@@ -289,8 +315,8 @@ export default DS.JSONAPISerializer.extend({
       const normalizedEmbedded = Object.keys(payload._embedded)
         .map(embeddedKey => {
           return payload._embedded[embeddedKey].map(embeddedPayload => {
-            return this.normalize(primaryModelClass, embeddedPayload, included)
-          })
+            return this.normalize(primaryModelClass, embeddedPayload, included);
+          });
         });
 
       documentHash.data = arrayFlatten(normalizedEmbedded);

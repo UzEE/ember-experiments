@@ -25,3 +25,14 @@
     {{/each}}
   </tbody>
 </table>
+
+{{#if model.meta.pagination}}
+<p class="small">
+  Pages: 
+  {{#if model.meta.pagination.firstPage}}{{#link-to "users" (query-params page=model.meta.pagination.firstPage)}}First{{/link-to}}{{/if}}
+  {{#if model.meta.pagination.prevPage}}{{#link-to "users" (query-params page=model.meta.pagination.prevPage)}}Prev{{/link-to}}{{/if}}
+  {{#if model.meta.pagination.nextPage}}{{#link-to "users" (query-params page=model.meta.pagination.nextPage)}}Next{{/link-to}}{{/if}}
+  {{#if model.meta.pagination.lastPage}}{{#link-to "users" (query-params page=model.meta.pagination.lastPage)}}Last{{/link-to}}{{/if}}
+</p>
+{{/if}}
+

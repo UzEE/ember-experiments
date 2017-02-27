@@ -33,7 +33,7 @@ export default Serializer.extend({
       if (id === null) {
 
         id = ``;
-      
+
       } else {
         id = `/${id}`;
       }
@@ -53,6 +53,45 @@ export default Serializer.extend({
       delete data.id;
     };
 
+    // build _relations and _links for associations
+    const buildRelations = (data, obj) => {
+
+      const belongRelations = Object.keys(obj.belongsToAssociations);
+
+      if (belongRelations.length) {
+
+        if (!data['_relations']) {
+          data['_relations'] = {};
+        }
+
+        belongRelations.forEach((rel) => {
+
+          const modelName = obj.belongsToAssociations[rel].modelName;
+          const relId = data[`${rel}Id`];
+
+          data['_relations'][rel] = {
+
+            type: 'single',
+            cls: modelName,
+            id: relId
+          };
+
+          data['_links'][rel] = buildHref(modelName, relId);
+
+          delete data[`${rel}Id`];
+        });
+      }
+
+      const manyRelations = Object.keys(obj.hasManyAssociations);
+
+      if (manyRelations.length) {
+
+        if (!data['_relations']) {
+          data['_relations'] = {};
+        }
+      }
+    };
+
     if (Array.isArray(json)) {
 
       json.forEach((item) => {
@@ -62,6 +101,8 @@ export default Serializer.extend({
         item['_links'] = {
           self: buildHref(obj.modelName, item._identity.id)
         };
+
+        buildRelations(item);
       });
 
       output['_embedded'] = {
@@ -105,6 +146,8 @@ export default Serializer.extend({
       output['_links'] = {
         self: buildHref(obj.modelName, obj.attrs.id)
       };
+
+      buildRelations(output, obj);
 
       delete output.id;
     }
